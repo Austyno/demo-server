@@ -61,7 +61,15 @@ const createRequest = async (req, res) => {
 
 const getMyRequests = async (req, res) => {
     try {
-        const requests = await PaymentRequest.find({ user: req.user.id }).sort({ createdAt: -1 });
+        const { status } = req.query;
+        const query = { user: req.user.id };
+        if (status) {
+            query.status = status;
+        }
+        const requests = await PaymentRequest.find(query)
+            .populate('user', 'username')
+            .populate('history.actor', 'username')
+            .sort({ createdAt: -1 });
         const transformed = requests.map(doc => {
             const obj = doc.toObject();
             obj.id = doc._id;
@@ -214,6 +222,7 @@ const getSubordinateRequests = async (req, res) => {
 
         const requests = await PaymentRequest.find(query)
             .populate('user', 'username')
+            .populate('history.actor', 'username')
             .sort({ createdAt: -1 });
 
         const transformed = requests.map(doc => {
