@@ -19,6 +19,11 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  language: {
+    type: String,
+    enum: ['en', 'fr'],
+    default: 'en'
   }
 }, {
   timestamps: true
