@@ -1,59 +1,65 @@
 const mongoose = require('mongoose');
 
 const paymentRequestSchema = mongoose.Schema({
-  descriptionEn: {
+  referenceNumber: {
     type: String,
+    unique: true,
     required: true
   },
-  descriptionFr: {
-    type: String,
-    required: true
-  },
-  beneficiary: String,
-  bankName: String,
-  accountNumber: String,
-  referenceNumber: String,
-  amount: Number,
-  currency: {
-    type: String,
-    default: 'USD'
-  },
-  amountInWords: String,
-  accountName: String, // Budget Line
-  fundingSourceCode: String,
-  quickBooksCode: String,
-  requestDate: Date,
   status: {
     type: String,
-    required: true,
-    enum: ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'MINUTED'],
-    default: 'DRAFT'
+    enum: ['PENDING_MANAGER', 'PENDING_ED', 'APPROVED', 'REJECTED_MANAGER', 'REJECTED_ED', 'RETURNED_MANAGER', 'RETURNED_ED', 'PENDING', 'REJECTED', 'MINUTED'],
+    default: 'PENDING_MANAGER'
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    ref: 'User',
+    required: true
+  },
+  manager: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  documents: [{
-    filePath: String,
-    originalName: String
-  }],
   history: [{
-    action: String, // SUBMIT, APPROVE, REJECT, MINUTE
+    action: {
+        type: String,
+        enum: ['CREATED', 'APPROVED', 'REJECTED', 'REJECTED_MANAGER', 'REJECTED_ED', 'RETURNED_MANAGER', 'RETURNED_ED', 'EDITED', 'SUBMITTED']
+    },
     comment: String,
     actor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     timestamp: {
-      type: Date,
-      default: Date.now
+        type: Date,
+        default: Date.now
     }
   }]
-}, {
-  timestamps: true
+}, { 
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-const PaymentRequest = mongoose.model('PaymentRequest', paymentRequestSchema);
+// Virtuals to populate child documents
+paymentRequestSchema.virtual('letter', {
+  ref: 'PaymentRequestLetter',
+  localField: '_id',
+  foreignField: 'paymentRequest',
+  justOne: true
+});
 
-module.exports = PaymentRequest;
+paymentRequestSchema.virtual('voucher', {
+  ref: 'PaymentVoucher',
+  localField: '_id',
+  foreignField: 'paymentRequest',
+  justOne: true
+});
+
+paymentRequestSchema.virtual('documents', {
+  ref: 'SupportingDocument',
+  localField: '_id',
+  foreignField: 'paymentRequest'
+});
+
+module.exports = mongoose.model('PaymentRequest', paymentRequestSchema);

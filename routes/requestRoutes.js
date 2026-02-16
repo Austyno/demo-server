@@ -1,5 +1,5 @@
 const express = require('express');
-const { createRequest, getMyRequests } = require('../controllers/requestController');
+const { createRequest, getRequests, getRequestById, updateRequest, submitRequest, getSubordinateRequests, processRequest, getEDRequests } = require('../controllers/requestController');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -19,7 +19,23 @@ router.get(
     '/',
     authenticateToken,
     authorizeRole(['CLERK']),
-    getMyRequests
+    getRequests
+);
+
+// Get subordinate requests (Manager) - filtered by status
+router.get(
+    '/subordinates',
+    authenticateToken,
+    authorizeRole(['MANAGER', 'ED']), // ED might want to see subordinates too if we decide so, but mainly for Manager
+    getSubordinateRequests
+);
+
+// Get requests for ED
+router.get(
+    '/ed-tasks',
+    authenticateToken,
+    authorizeRole(['ED']),
+    getEDRequests
 );
 
 // Submit request
@@ -27,47 +43,31 @@ router.put(
     '/:id/submit',
     authenticateToken,
     authorizeRole(['CLERK']),
-    require('../controllers/requestController').submitRequest
+    submitRequest
 );
 
-// Get pending requests (Manager)
-router.get(
-    '/pending',
-    authenticateToken,
-    authorizeRole(['MANAGER']),
-    require('../controllers/requestController').getPendingRequests
-);
-
-// Get subordinate requests (Manager) - filtered by status
-router.get(
-    '/subordinates',
-    authenticateToken,
-    authorizeRole(['MANAGER']),
-    require('../controllers/requestController').getSubordinateRequests
-);
-
-// Process request (Approve/Reject/Minute)
+// Process request (Approve/Reject/Return)
 router.put(
     '/:id/process',
     authenticateToken,
-    authorizeRole(['MANAGER']),
-    require('../controllers/requestController').processRequest
+    authorizeRole(['MANAGER', 'ED']),
+    processRequest
 );
 
 // Get single request
 router.get(
     '/:id',
     authenticateToken,
-    require('../controllers/requestController').getRequestById
+    getRequestById
 );
 
 // Update request (Edit)
 router.put(
     '/:id',
     authenticateToken,
-    authorizeRole(['CLERK']),
+    authorizeRole(['CLERK', 'MANAGER']), // Manager can now edit
     upload.array('documents', 5),
-    require('../controllers/requestController').updateRequest
+    updateRequest
 );
 
 module.exports = router;

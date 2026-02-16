@@ -29,7 +29,12 @@ const messageRoutes = require('./routes/messageRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/banks', require('./routes/bankRoutes')); // Register bank routes
+app.use('/api/payment-vouchers', require('./routes/paymentVoucherRoutes'));
+app.use('/api/chart-of-accounts', require('./routes/chartOfAccountRoutes'));
+ // Register payment voucher routes
 app.use('/api/messages', messageRoutes);
+// Serve static files (uploaded documents and PDFs);
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 // Socket.io connection logic
